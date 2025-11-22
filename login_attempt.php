@@ -134,7 +134,7 @@ $datagrid = new simbio_datagrid();
 
 $datagrid->setSQLColumn('t.id',
     't.ip_address AS \''.__('IP Address').'\'',
-    't.request_url',
+    't.ip_detail',
     't.attempt_count AS \''.__('Failed Count').'\'',
     't.last_attempt AS \''.__('Last Attempt').'\'',
     't.created_at AS \''.__('First Attempt').'\'');

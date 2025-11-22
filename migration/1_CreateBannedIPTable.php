@@ -10,7 +10,7 @@ class CreateBannedIPTable extends Migration {
                 CREATE TABLE `ip_log` (
                     id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
                     ip_address VARCHAR(45) NOT NULL,
-                    request_url TEXT NOT NULL,
+                    ip_detail TEXT NOT NULL,
                     attempt_count INT(11) UNSIGNED DEFAULT 1,
                     created_at DATETIME NOT NULL,
                     last_attempt DATETIME NOT NULL,

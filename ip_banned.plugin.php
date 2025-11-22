@@ -15,6 +15,28 @@ use SLiMS\Plugins;
 $db = DB::getInstance();
 $plugin = Plugins::getInstance();
 
+function getIpGeolocation($ip) {
+    $url = "http://ip-api.com/json/{$ip}";
+    $data = @file_get_contents($url);
+    if ($data === false) {
+        return json_encode(['error' => 'Failed to fetch geolocation']);
+    }
+    $json = json_decode($data, true);
+    if ($json['status'] !== 'success') {
+        return json_encode(['error' => 'API lookup failed']);
+    }
+    else{
+        $ip_note = "
+        Location:   {$json['city']}, {$json['regionName']} ({$json['country']})
+        Coordinates:{$json['lat']}, {$json['lon']}
+        ISP:        {$json['isp']}
+        AS Number:  {$json['as']}
+        Timezone:   {$json['timezone']}
+        ";
+    return  nl2br(trim($ip_note));
+    }
+}
+
 function getUserIpAddr() {
     if(!empty($_SERVER['HTTP_CLIENT_IP'])){
         $ip = $_SERVER['HTTP_CLIENT_IP'];
@@ -131,7 +153,8 @@ Plugins::hook(Plugins::CONTENT_BEFORE_LOAD, function() use ($db) {
     if($is_public_failed || $is_admin_failed){
         
         $current_time = date('Y-m-d H:i:s');
-        $request_url = $_SERVER['REQUEST_URI'];
+        //$ip_detail = $_SERVER['REQUEST_URI'];
+        $ip_detail = getIpGeolocation($user_ip);
         
         if ((int)$settings['JAIL_ENABLED'] === 1) {
             $jail_limit = (int)$settings['JAIL_ATTEMPTS_LIMIT'];
@@ -158,17 +181,17 @@ Plugins::hook(Plugins::CONTENT_BEFORE_LOAD, function() use ($db) {
         $new_count = ($log_data && $last_time >= $time_limit) ? (int)$log_data['attempt_count'] + 1 : 1; 
 
         $stmt_upsert = $db->prepare("
-            INSERT INTO ip_log (ip_address, request_url, created_at, last_attempt, attempt_count) 
-            VALUES (:ip_address, :request_url, :created_at, :last_attempt, :attempt_count)
+            INSERT INTO ip_log (ip_address, ip_detail, created_at, last_attempt, attempt_count) 
+            VALUES (:ip_address, :ip_detail, :created_at, :last_attempt, :attempt_count)
             ON DUPLICATE KEY UPDATE 
-                request_url = VALUES(request_url), 
+                ip_detail = VALUES(ip_detail), 
                 last_attempt = VALUES(last_attempt), 
                 attempt_count = attempt_count + 1
         ");
         
         $params = [
             'ip_address' => $user_ip, 
-            'request_url' => $request_url, 
+            'ip_detail' => $ip_detail, 
             'created_at' => $current_time, 
             'last_attempt' => $current_time,
             'attempt_count' => $new_count
