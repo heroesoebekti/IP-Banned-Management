@@ -13,6 +13,7 @@ use SLiMS\Plugins;
 
 // Get the SLiMS database instance
 $db = DB::getInstance();
+$plugin = Plugins::getInstance();
 
 function getUserIpAddr() {
     if(!empty($_SERVER['HTTP_CLIENT_IP'])){
